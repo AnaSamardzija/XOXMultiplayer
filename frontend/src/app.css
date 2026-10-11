@@ -97,6 +97,51 @@ body {
     font-weight: 600;
 }
 
+/* Kartice statistike na profilu */
+.stat-label {
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--app-dark);
+}
+
+/* Rang-lista: mesto u krugu, prva tri mesta zlatno, srebrno i bronzano */
+.rank-badge {
+    width: 1.9rem;
+    height: 1.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--app-bg);
+    color: var(--app-dark);
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.rank-1 {
+    background-color: #F2C230;
+}
+
+.rank-2 {
+    background-color: #C9D1DB;
+}
+
+.rank-3 {
+    background-color: #D9955B;
+    color: #fff;
+}
+
+/* Red prijavljenog korisnika u tabeli (Bootstrap boju ćelije čita iz --bs-table-bg) */
+.row-me {
+    --bs-table-bg: var(--app-bg);
+}
+
 /* Prijava i registracija, strane bez zaglavlja: sadržaj na sredini ekrana */
 .auth-page {
     min-height: 100vh;

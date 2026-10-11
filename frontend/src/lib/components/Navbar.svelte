@@ -18,9 +18,12 @@
 
         <!-- overflow-hidden dozvoljava da se dugo korisničko ime skrati umesto da prelomi traku -->
         <div class="d-flex align-items-center gap-2 overflow-hidden">
-            <span class="navbar-user text-truncate">
+            <a class="btn btn-outline-light btn-sm flex-shrink-0" href="#/leaderboard" title="Rang-lista" aria-label="Rang-lista">
+                <i class="bi bi-trophy"></i><span class="d-none d-sm-inline ms-1">Rang-lista</span>
+            </a>
+            <a class="navbar-user text-truncate text-decoration-none" href="#/profile" title="Profil">
                 <i class="bi bi-person-circle me-1"></i>{$authStore.user?.username}
-            </span>
+            </a>
             <button class="btn btn-outline-light btn-sm flex-shrink-0" onclick={handleLogout}>
                 <i class="bi bi-box-arrow-right"></i><span class="d-none d-sm-inline ms-1">Odjavi se</span>
             </button>
