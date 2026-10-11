@@ -97,6 +97,51 @@ body {
     font-weight: 600;
 }
 
+/* Kartice statistike na profilu */
+.stat-label {
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--app-dark);
+}
+
+/* Rang-lista: mesto u krugu, prva tri mesta zlatno, srebrno i bronzano */
+.rank-badge {
+    width: 1.9rem;
+    height: 1.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--app-bg);
+    color: var(--app-dark);
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.rank-1 {
+    background-color: #F2C230;
+}
+
+.rank-2 {
+    background-color: #C9D1DB;
+}
+
+.rank-3 {
+    background-color: #D9955B;
+    color: #fff;
+}
+
+/* Red prijavljenog korisnika u tabeli (Bootstrap boju ćelije čita iz --bs-table-bg) */
+.row-me {
+    --bs-table-bg: var(--app-bg);
+}
+
 /* Prijava i registracija, strane bez zaglavlja: sadržaj na sredini ekrana */
 .auth-page {
     min-height: 100vh;
@@ -151,24 +196,50 @@ body {
     font-size: 0.75rem;
 }
 
-/* Čet. Ispod table je širok koliko i tabla, a pored nje zauzima celu kolonu */
-.chat-column {
-    max-width: 32rem;
+/* Čet. Kružić u donjem desnom uglu ekrana, isti na telefonu i na računaru */
+.chat-toggle {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1030;
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(11, 31, 58, 0.3);
 }
 
-/* Lista poruka ima stalnu visinu i svoj klizač, da čet ne gura stranu nadole */
+/* Panel sa četom izlazi sa desne strane. Zatvoren je i dalje u strani, samo izvan ekrana;
+   visibility ga sklanja i od tastature. dvh: visina prati tastaturu na telefonu. */
+.chat-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 22rem);
+    height: 100dvh;
+    background-color: #fff;
+    box-shadow: -0.25rem 0 1rem rgba(11, 31, 58, 0.2);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.25s ease, visibility 0.25s;
+}
+
+.chat-panel-open {
+    transform: none;
+    visibility: visible;
+}
+
+/* Lista poruka zauzima sav prostor između zaglavlja i polja za unos i ima svoj klizač */
 .chat-messages {
     display: flex;
     flex-direction: column;
+    flex: 1;
     gap: 0.4rem;
-    height: 14rem;
     overflow-y: auto;
-}
-
-@media (min-width: 992px) {
-    .chat-messages {
-        height: 24rem;
-    }
 }
 
 /* Tuđa poruka je levo, a moja desno i u plavoj */

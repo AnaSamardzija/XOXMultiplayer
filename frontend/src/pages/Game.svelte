@@ -206,26 +206,20 @@
             <p class="text-center text-muted small mb-3">Protivnik je odsutan, čeka se da se vrati.</p>
         {/if}
 
-        <!-- Na širokom ekranu čet je pored table, a na telefonu ispod nje -->
-        <div class="row g-3 justify-content-center">
-            <div class="col-lg-8">
-                <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
-                <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'}
-                       onMove={play}/>
+        <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
+        <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'}
+               onMove={play}/>
 
-                <div class="text-center mt-3">
-                    <button class="btn btn-outline-danger btn-sm" onclick={() => showSurrenderModal = true}
-                            disabled={$connectionState !== 'connected'}>
-                        Predaj partiju
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-lg-4 chat-column">
-                <Chat messages={chatMessages} myUsername={$authStore.user?.username ?? ''}
-                      disabled={$connectionState !== 'connected'} onSend={sendChatMessage}/>
-            </div>
+        <div class="text-center mt-3">
+            <button class="btn btn-outline-danger btn-sm" onclick={() => showSurrenderModal = true}
+                    disabled={$connectionState !== 'connected'}>
+                Predaj partiju
+            </button>
         </div>
+
+        <!-- Čet je kružić u uglu ekrana i ne zauzima mesto na strani -->
+        <Chat messages={chatMessages} myUsername={$authStore.user?.username ?? ''}
+              disabled={$connectionState !== 'connected'} onSend={sendChatMessage}/>
     {/if}
 {:else if !error}
     <div class="d-flex justify-content-center align-items-center gap-2">

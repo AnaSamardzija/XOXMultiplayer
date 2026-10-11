@@ -15,9 +15,20 @@
     let text = $state('');
     let list = $state<HTMLDivElement>();
 
-    // Kad stigne nova poruka, lista se spušta na dno
+    // Čet je sakriven dok se ne klikne na kružić u uglu, a onda izlazi sa desne strane
+    let open = $state(false);
+    // Koliko je poruka bilo kad je čet poslednji put bio otvoren: tuđe poruke posle toga su nepročitane
+    let seenCount = $state(0);
+
+    const unreadCount = $derived(
+        messages.slice(seenCount).filter((message) => message.senderUsername !== myUsername).length);
+
+    // Kad stigne nova poruka ili se čet otvori, lista se spušta na dno
     $effect(() => {
-        if (list && messages.length > 0) list.scrollTop = list.scrollHeight;
+        if (!open) return;
+
+        seenCount = messages.length;
+        if (list) list.scrollTop = list.scrollHeight;
     });
 
     // Poruka se ne dodaje u listu ovde, nego tek kad stigne sa teme četa, kao i potez na tabli
@@ -30,9 +41,21 @@
     }
 </script>
 
-<div class="card">
-    <div class="card-header"><i class="bi bi-chat-dots me-2"></i>Čet</div>
-    <div class="card-body chat-messages" bind:this={list}>
+<button type="button" class="btn btn-primary chat-toggle" aria-label="Otvori čet" onclick={() => open = true}>
+    <i class="bi bi-chat-dots"></i>
+    {#if unreadCount > 0}
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {unreadCount}
+        </span>
+    {/if}
+</button>
+
+<div class="chat-panel" class:chat-panel-open={open}>
+    <div class="d-flex justify-content-between align-items-center p-3 border-bottom fw-semibold">
+        <span><i class="bi bi-chat-dots me-2"></i>Čet</span>
+        <button type="button" class="btn-close" aria-label="Zatvori čet" onclick={() => open = false}></button>
+    </div>
+    <div class="chat-messages p-3" bind:this={list}>
         {#each messages as message (message.number)}
             <div class="chat-message" class:chat-message-mine={message.senderUsername === myUsername}>
                 {#if message.senderUsername !== myUsername}
@@ -44,7 +67,7 @@
             <p class="text-muted small text-center m-auto">Još nema poruka.</p>
         {/each}
     </div>
-    <div class="card-footer bg-white">
+    <div class="p-3 border-top">
         <form class="input-group" onsubmit={submit}>
             <input type="text" class="form-control" placeholder="Napišite poruku" aria-label="Poruka"
                    maxlength={MAX_LENGTH} autocomplete="off" bind:value={text}/>
