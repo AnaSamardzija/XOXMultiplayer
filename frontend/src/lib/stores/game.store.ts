@@ -1,8 +1,9 @@
 import {get, writable} from 'svelte/store';
-import type {GameStateDto, MatchFoundDto} from '../types/game.types';
+import type {GameStateDto} from '../types/game.types';
 
-// Poruka o uparivanju stiže na početnoj strani, a čita je ekran partije
-export const matchStore = writable<MatchFoundDto | null>(null);
+// Identifikator partije na kojoj je korisnik. Upisuje se iz poruke o uparivanju na početnoj strani,
+// a posle osvežavanja strane ili ponovnog povezivanja iz odgovora sa REST-a. Čita ga ekran partije.
+export const activeGameIdStore = writable<number | null>(null);
 
 // Stanje partije koje se trenutno prikazuje. Upisuje se samo kroz applyGameState.
 export const gameStateStore = writable<GameStateDto | null>(null);

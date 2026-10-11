@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +36,7 @@ public class GameService
 	private static final String GAME_TOPIC = "/topic/games/";
 
 	private static final Duration TURN_DURATION = Duration.ofSeconds(20);
+	private static final Duration RECONNECT_DURATION = Duration.ofSeconds(40);
 
 	private final GameRepository _gameRepository;
 	private final GameMapper _gameMapper;
@@ -126,6 +128,68 @@ public class GameService
 		}
 	}
 
+	// Poziva PresenceService kad igrač ostane bez ijedne žive veze. Zakazuje mu se rok za povratak,
+	// a protivnik preko novog stanja vidi da je odsutan. Tajmer poteza se ne dira: i dalje teče,
+	// da odsustvo ne bi bilo način da se dobije vreme.
+	public void playerLeft(final String username)
+	{
+		final GameSession session = findSessionOf(username);
+
+		if (session == null)
+		{
+			return;
+		}
+
+		final Symbol symbol = session.symbolOf(username);
+
+		synchronized (session)
+		{
+			// Partija je mogla da se završi dok se čekalo na zaključavanje
+			if (!_games.containsKey(session.getId()) || session.isAway(symbol))
+			{
+				return;
+			}
+
+			session.getReconnectTimeouts().put(symbol, _taskScheduler.schedule(
+					() -> onReconnectTimeout(session, symbol), Instant.now().plus(RECONNECT_DURATION)));
+			publishState(session);
+		}
+	}
+
+	// Poziva PresenceService kad igrač koji nije imao nijednu vezu otvori novu
+	public void playerReturned(final String username)
+	{
+		final GameSession session = findSessionOf(username);
+
+		if (session == null)
+		{
+			return;
+		}
+
+		final Symbol symbol = session.symbolOf(username);
+
+		synchronized (session)
+		{
+			final ScheduledFuture<?> reconnectTimeout = session.getReconnectTimeouts().remove(symbol);
+
+			if (reconnectTimeout == null)
+			{
+				return;
+			}
+
+			reconnectTimeout.cancel(false);
+			publishState(session);
+		}
+	}
+
+	private GameSession findSessionOf(final String username)
+	{
+		return _games.values().stream()
+		             .filter(session -> session.symbolOf(username) != null)
+		             .findFirst()
+		             .orElse(null);
+	}
+
 	private GameSession findSession(final Long gameId)
 	{
 		final GameSession session = _games.get(gameId);
@@ -175,6 +239,11 @@ public class GameService
 	private void finishGame(final GameSession session, final GameEndReason endReason)
 	{
 		session.setEndReason(endReason);
+
+		// Rokovi za povratak više nemaju šta da završe. Kad su odsutna oba igrača, ovako partiju
+		// završava rok koji prvi istekne, a drugi se otkazuje.
+		session.getReconnectTimeouts().values().forEach(reconnectTimeout -> reconnectTimeout.cancel(false));
+		session.getReconnectTimeouts().clear();
 
 		try
 		{
@@ -250,6 +319,27 @@ public class GameService
 			final Move move = game.randomMove();
 			game.applyMove(game.getCurrentPlayer(), move.boardIndex(), move.cellIndex());
 			afterMove(session);
+		}
+	}
+
+	// Izvršava se u niti zakazivača kad igraču istekne rok za povratak. Kao i istek vremena za potez,
+	// prolazi kroz isto zaključavanje kao potez i proverava da partija još postoji i da je igrač
+	// još odsutan: povratak ili kraj partije su mogli da stignu u istom trenutku.
+	private void onReconnectTimeout(final GameSession session, final Symbol symbol)
+	{
+		synchronized (session)
+		{
+			if (!_games.containsKey(session.getId()) || !session.isAway(symbol))
+			{
+				return;
+			}
+
+			// Ishod je isti kao kod predaje, pobeda protivnika, pa se zove ista metoda pravila.
+			// Razlikuje se samo razlog završetka.
+			session.getGame().surrender(symbol);
+			// Igra je završena, pa ovo samo otkazuje tajmer
+			scheduleTurnTimeout(session);
+			finishGame(session, GameEndReason.DISCONNECT);
 		}
 	}
 
