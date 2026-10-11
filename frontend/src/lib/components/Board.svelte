@@ -10,7 +10,10 @@
 
     // Front ne zna pravila: koje mini-table se ističu čita se iz onoga što je server poslao.
     // Obavezna mini-tabla je jedna, a kod slobodnog poteza server je ne šalje, pa se ističu sve otvorene.
+    // Na završnom ekranu se ne ističe nijedna.
     function isPlayable(boardIndex: number): boolean {
+        if (game.finished) return false;
+
         return game.forcedBoard !== null
             ? game.forcedBoard === boardIndex
             : game.boardStates[boardIndex] === 'OPEN';

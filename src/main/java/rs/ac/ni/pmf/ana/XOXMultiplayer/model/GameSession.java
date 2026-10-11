@@ -28,6 +28,10 @@ public class GameSession
 	// Trenutak u kome ističe vreme za potez, null kad odbrojavanja nema
 	@Setter
 	private Instant turnDeadline;
+	// Zašto je partija završena, null dok traje. Ishod drži sama igra, a razlog ne može:
+	// predaja i prekinuta veza nisu pravila igre.
+	@Setter
+	private GameEndReason endReason;
 
 	public boolean hasPlayer(final Long userId)
 	{

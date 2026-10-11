@@ -1,6 +1,7 @@
 package rs.ac.ni.pmf.ana.XOXMultiplayer.mapper;
 
 import org.springframework.stereotype.Component;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameOutcome;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameSession;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.Symbol;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.UltimateXoxGame;
@@ -48,6 +49,27 @@ public class GameMapper
 		                   .forcedBoard(game.getForcedBoard())
 		                   .moveNumber(game.getMoveCount())
 		                   .turnRemainingMillis(turnRemainingMillis)
+		                   .finished(game.isFinished())
+		                   .outcome(game.getOutcome())
+		                   .winnerUsername(winnerUsername(session))
+		                   .endReason(session.getEndReason())
 		                   .build();
+	}
+
+	private String winnerUsername(final GameSession session)
+	{
+		final GameOutcome outcome = session.getGame().getOutcome();
+
+		if (outcome == GameOutcome.X_WON)
+		{
+			return session.getPlayerXUsername();
+		}
+
+		if (outcome == GameOutcome.O_WON)
+		{
+			return session.getPlayerOUsername();
+		}
+
+		return null;
 	}
 }

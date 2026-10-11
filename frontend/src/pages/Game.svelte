@@ -7,10 +7,19 @@
     import {getActiveGame} from '../lib/api/game.api';
     import {applyGameState, gameStateStore, matchStore} from '../lib/stores/game.store';
     import Board from '../lib/components/Board.svelte';
-    import type {GameStateDto, MoveRequestDto, PlayerSymbol} from '../lib/types/game.types';
+    import ConfirmModal from '../lib/components/ConfirmModal.svelte';
+    import type {GameEndReason, GameStateDto, MoveRequestDto, PlayerSymbol} from '../lib/types/game.types';
+
+    const END_REASON_TEXT: Record<GameEndReason, string> = {
+        THREE_IN_ROW: 'Tri mini-table u nizu',
+        ALL_BOARDS_RESOLVED: 'Sve mini-table su rešene bez tri u nizu',
+        SURRENDER: 'Predaja',
+        DISCONNECT: 'Prekinuta veza'
+    };
 
     let error = $state('');
     let secondsLeft = $state<number | null>(null);
+    let showSurrenderModal = $state(false);
 
     // Privremeno: identifikator partije postoji samo u memoriji pregledača, pa posle osvežavanja strane
     // nema na koju temu da se pretplati. Povratak u partiju dolazi u kasnijem zadatku.
@@ -27,6 +36,12 @@
         {symbol: 'X', username: game.playerXUsername},
         {symbol: 'O', username: game.playerOUsername}
     ] : []);
+
+    const resultTitle = $derived.by(() => {
+        if (!game?.finished) return '';
+        if (game.outcome === 'DRAW') return 'Nerešeno';
+        return game.winnerUsername === $authStore.user?.username ? 'Pobedili ste!' : 'Izgubili ste';
+    });
 
     // Redosled je bitan: prvo pretplata na temu partije, pa tek onda stanje preko REST-a. Poruka o
     // uparivanju ne nosi tablu, a stanje koje bi server objavio na temu pre pretplate bi se izgubilo.
@@ -70,6 +85,11 @@
 
             // Partije više nema na serveru
             if (!state) {
+                // Završena je dok je ovaj ekran otvoren: završni ekran se crta iz poslednjeg primljenog
+                // stanja, pa se ostaje na njemu
+                const last = get(gameStateStore);
+                if (last?.finished && last.gameId === get(matchStore)?.gameId) return;
+
                 matchStore.set(null);
                 push('/');
                 return;
@@ -88,6 +108,18 @@
         const move: MoveRequestDto = {boardIndex, cellIndex};
         send(`/app/games/${game.gameId}/move`, move);
     }
+
+    function surrender() {
+        if (!game) return;
+
+        send(`/app/games/${game.gameId}/surrender`);
+    }
+
+    // Nova partija se traži sa početne strane, jer je tamo pretplata na poruku o uparivanju
+    function newGame() {
+        matchStore.set(null);
+        push('/');
+    }
 </script>
 
 {#if error}
@@ -97,7 +129,11 @@
 {#if game}
     <div class="d-flex justify-content-center gap-2 mb-2">
         {#each players as player}
-            <div class="player-chip" class:player-chip-active={game.currentPlayer === player.symbol}>
+            <!-- Dok partija traje istaknut je igrač na potezu, a na završnom ekranu pobednik -->
+            <div class="player-chip"
+                 class:player-chip-active={game.finished
+                     ? game.winnerUsername === player.username
+                     : game.currentPlayer === player.symbol}>
                 <strong class:symbol-x={player.symbol === 'X'} class:symbol-o={player.symbol === 'O'}>
                     {player.symbol}
                 </strong>
@@ -108,18 +144,54 @@
         {/each}
     </div>
 
-    <p class="text-center fw-semibold mb-3">
-        {game.currentPlayer === mySymbol ? 'Vi ste na potezu' : 'Na potezu je protivnik'}
-        {#if secondsLeft !== null}
-            · <span class:text-danger={secondsLeft <= 5}>{secondsLeft} s</span>
-        {/if}
-    </p>
+    {#if game.finished}
+        <div class="text-center mb-3">
+            <h4 class="mb-1">{resultTitle}</h4>
+            <p class="mb-0">
+                {#if game.winnerUsername}
+                    Pobednik: <strong>{game.winnerUsername}</strong> ·
+                {/if}
+                {game.endReason ? END_REASON_TEXT[game.endReason] : ''}
+            </p>
+        </div>
 
-    <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
-    <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'} onMove={play}/>
+        <Board {game} canPlay={false} onMove={play}/>
+
+        <div class="text-center mt-3">
+            <button class="btn btn-primary btn-lg" onclick={newGame}>Nova partija</button>
+        </div>
+    {:else}
+        <p class="text-center fw-semibold mb-3">
+            {game.currentPlayer === mySymbol ? 'Vi ste na potezu' : 'Na potezu je protivnik'}
+            {#if secondsLeft !== null}
+                · <span class:text-danger={secondsLeft <= 5}>{secondsLeft} s</span>
+            {/if}
+        </p>
+
+        <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
+        <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'} onMove={play}/>
+
+        <div class="text-center mt-3">
+            <button class="btn btn-outline-danger btn-sm" onclick={() => showSurrenderModal = true}
+                    disabled={$connectionState !== 'connected'}>
+                Predaj partiju
+            </button>
+        </div>
+    {/if}
 {:else if !error}
     <div class="d-flex justify-content-center align-items-center gap-2">
         <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
         <span>Učitavanje partije…</span>
     </div>
+{/if}
+
+<!-- Ako se partija završi dok je prozor otvoren, potvrda više nema smisla, pa prozor nestaje -->
+{#if game && !game.finished}
+    <ConfirmModal
+        bind:show={showSurrenderModal}
+        title="Predaja partije"
+        message="Da li ste sigurni da želite da predate partiju? Pobeda se upisuje protivniku."
+        confirmLabel="Predaj partiju"
+        onConfirm={surrender}
+    />
 {/if}

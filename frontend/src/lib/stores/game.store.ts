@@ -13,7 +13,13 @@ export const gameStateStore = writable<GameStateDto | null>(null);
 export function applyGameState(state: GameStateDto) {
     const current = get(gameStateStore);
 
-    if (current && current.gameId === state.gameId && state.moveNumber < current.moveNumber) return;
+    if (current && current.gameId === state.gameId) {
+        if (state.moveNumber < current.moveNumber) return;
+
+        // Posle završnog stanja ništa više ne važi. Predaja ne menja redni broj poteza, pa bi
+        // zakasneli odgovor sa REST-a inače vratio prikaz na partiju u toku.
+        if (current.finished) return;
+    }
 
     gameStateStore.set(state);
 }
