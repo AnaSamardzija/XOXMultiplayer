@@ -28,4 +28,11 @@ public class GameSocketController
 	{
 		_gameService.makeMove(gameId, principal.getName(), request.getBoardIndex(), request.getCellIndex());
 	}
+
+	// Klijent šalje na /app/games/{gameId}/surrender, bez tela. Završno stanje stiže oboma na temu partije.
+	@MessageMapping("/games/{gameId}/surrender")
+	public void surrender(@DestinationVariable final Long gameId, final Principal principal)
+	{
+		_gameService.surrender(gameId, principal.getName());
+	}
 }

@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.InvalidOperationException;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.ResourceNotFoundException;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.mapper.GameMapper;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameEndReason;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameOutcome;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameSession;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameStatus;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.Move;
@@ -20,6 +22,7 @@ import rs.ac.ni.pmf.ana.XOXMultiplayer.repository.GameRepository;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,19 +97,8 @@ public class GameService
 
 	public void makeMove(final Long gameId, final String username, final int boardIndex, final int cellIndex)
 	{
-		final GameSession session = _games.get(gameId);
-
-		if (session == null)
-		{
-			throw new ResourceNotFoundException("Partija nije pronađena");
-		}
-
-		final Symbol symbol = session.symbolOf(username);
-
-		if (symbol == null)
-		{
-			throw new InvalidOperationException("Niste igrač u ovoj partiji");
-		}
+		final GameSession session = findSession(gameId);
+		final Symbol symbol = symbolOf(session, username);
 
 		// Zaključavanje po partiji: dve poruke za istu partiju mogu da se obrađuju paralelno.
 		// Da li je igrač na potezu, da li je mini-tabla dozvoljena i da li je polje prazno proverava
@@ -114,7 +106,105 @@ public class GameService
 		synchronized (session)
 		{
 			session.getGame().applyMove(symbol, boardIndex, cellIndex);
+			afterMove(session);
+		}
+	}
+
+	// Ishod je pobeda protivnika, a razlog završetka predaja. Prolazi kroz isto zaključavanje kao potez:
+	// ako je partija u međuvremenu završena, surrender baca izuzetak i rezultat se ne upisuje dvaput.
+	public void surrender(final Long gameId, final String username)
+	{
+		final GameSession session = findSession(gameId);
+		final Symbol symbol = symbolOf(session, username);
+
+		synchronized (session)
+		{
+			session.getGame().surrender(symbol);
+			// Igra je završena, pa ovo samo otkazuje tajmer
 			scheduleTurnTimeout(session);
+			finishGame(session, GameEndReason.SURRENDER);
+		}
+	}
+
+	private GameSession findSession(final Long gameId)
+	{
+		final GameSession session = _games.get(gameId);
+
+		if (session == null)
+		{
+			throw new ResourceNotFoundException("Partija nije pronađena");
+		}
+
+		return session;
+	}
+
+	private Symbol symbolOf(final GameSession session, final String username)
+	{
+		final Symbol symbol = session.symbolOf(username);
+
+		if (symbol == null)
+		{
+			throw new InvalidOperationException("Niste igrač u ovoj partiji");
+		}
+
+		return symbol;
+	}
+
+	// Poziva se samo unutar zaključavanja partije, posle svakog primenjenog poteza, ručnog ili
+	// onog koji je server odigrao kad je vreme isteklo.
+	private void afterMove(final GameSession session)
+	{
+		final UltimateXoxGame game = session.getGame();
+
+		scheduleTurnTimeout(session);
+
+		if (game.isFinished())
+		{
+			finishGame(session, game.getOutcome() == GameOutcome.DRAW
+					? GameEndReason.ALL_BOARDS_RESOLVED
+					: GameEndReason.THREE_IN_ROW);
+			return;
+		}
+
+		publishState(session);
+	}
+
+	// Poziva se samo unutar zaključavanja partije, kad je igra već završena i tajmer otkazan.
+	// Nije @Transactional: zove se i iz niti zakazivača, pozivom unutar iste klase, a takav poziv
+	// ne prolazi kroz Spring-ov proxy. findById i save imaju svaka svoju transakciju.
+	private void finishGame(final GameSession session, final GameEndReason endReason)
+	{
+		session.setEndReason(endReason);
+
+		try
+		{
+			final GameEntity gameEntity = _gameRepository.findById(session.getId())
+			                                             .orElseThrow(() -> new ResourceNotFoundException("Partija nije pronađena"));
+			final GameOutcome outcome = session.getGame().getOutcome();
+
+			gameEntity.setStatus(GameStatus.FINISHED);
+			gameEntity.setOutcome(outcome);
+			gameEntity.setEndReason(endReason);
+			gameEntity.setEndedAt(LocalDateTime.now());
+
+			// Igrači su lenje veze, ali ovde služe samo kao strani ključ, pa se ne učitavaju.
+			// Kod nerešenog ishoda pobednik ostaje prazan.
+			if (outcome == GameOutcome.X_WON)
+			{
+				gameEntity.setWinner(gameEntity.getPlayerX());
+			}
+			else if (outcome == GameOutcome.O_WON)
+			{
+				gameEntity.setWinner(gameEntity.getPlayerO());
+			}
+
+			_gameRepository.save(gameEntity);
+		}
+		finally
+		{
+			// I kad upis u bazu padne: inače bi igrači ostali zaglavljeni u završenoj partiji
+			// i ne bi mogli u novi red čekanja.
+			_games.remove(session.getId());
 			publishState(session);
 		}
 	}
@@ -159,8 +249,7 @@ public class GameService
 			// Red se ne preskače: server odigra nasumičan dozvoljen potez umesto igrača
 			final Move move = game.randomMove();
 			game.applyMove(game.getCurrentPlayer(), move.boardIndex(), move.cellIndex());
-			scheduleTurnTimeout(session);
-			publishState(session);
+			afterMove(session);
 		}
 	}
 

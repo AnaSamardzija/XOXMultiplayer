@@ -109,6 +109,17 @@ public class UltimateXoxGame
 		currentPlayer = symbol == Symbol.X ? Symbol.O : Symbol.X;
 	}
 
+	// Predati sme i igrač koji nije na potezu. Redni broj poteza se ne menja, jer predaja nije potez.
+	public void surrender(final Symbol symbol)
+	{
+		if (finished)
+		{
+			throw new InvalidOperationException("Partija je završena");
+		}
+
+		finish(symbol == Symbol.X ? GameOutcome.O_WON : GameOutcome.X_WON);
+	}
+
 	/**
 	 * Nasumičan dozvoljen potez za igrača na potezu, za slučaj kad mu istekne vreme.
 	 * Potez se samo vraća, a primenjuje se kroz applyMove kao i ručni.
