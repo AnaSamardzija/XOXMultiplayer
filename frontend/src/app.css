@@ -7,6 +7,15 @@
     --app-dark: #0B1F3A;
     --app-bg: #EAF2FF;
 
+    /* Tabla */
+    --app-x: #1E4FD8;
+    --app-o: #E4572E;
+    --app-playable: #FFB703;
+    --app-cell: #fff;
+    --app-cell-closed: #DCE5F5;
+    --app-cell-draw: #B4BAC4;
+    --app-grid-line: #8FA9EE;
+
     /* Bootstrap čita ove promenljive, pa text-primary, bg-primary, linkovi i fokus dobijaju našu plavu */
     --bs-primary: var(--app-primary);
     --bs-primary-rgb: var(--app-primary-rgb);
@@ -106,4 +115,101 @@ body {
     background-color: var(--app-primary);
     color: #fff;
     font-size: 1.5rem;
+}
+
+/* Igrači iznad table: istaknut je onaj koji je na potezu */
+.player-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 0.35rem 0.75rem;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: #fff;
+    opacity: 0.65;
+}
+
+.player-chip-active {
+    border-color: var(--app-playable);
+    opacity: 1;
+    box-shadow: 0 0.125rem 0.5rem rgba(11, 31, 58, 0.15);
+}
+
+.symbol-x {
+    color: var(--app-x);
+}
+
+.symbol-o {
+    color: var(--app-o);
+}
+
+/* Tabla. Omotač je kontejner po čijoj se širini (jedinica cqw) računaju razmaci i veličina simbola,
+   pa tabla izgleda isto na telefonu i na velikom ekranu, bez posebnih pravila po širini ekrana. */
+.board-wrap {
+    container-type: inline-size;
+    width: min(100%, 32rem);
+    margin: 0 auto;
+}
+
+/* Velika mreža: tamna pozadina se vidi kroz širok razmak između mini-tabli, i to su debele linije */
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2cqw;
+    padding: 2cqw;
+    border-radius: 0.5rem;
+    background-color: var(--app-dark);
+}
+
+/* Mala mreža: isto to, samo sa tankim razmakom i svetlijom linijom */
+.mini-board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5cqw;
+    background-color: var(--app-grid-line);
+}
+
+.cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background-color: var(--app-cell-closed);
+    font-size: 6.5cqw;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Mini-tabla u kojoj se sme igrati: bela polja i okvir oko cele mini-table */
+.mini-board-playable {
+    box-shadow: 0 0 0 0.9cqw var(--app-playable);
+}
+
+.mini-board-playable .cell {
+    background-color: var(--app-cell);
+}
+
+/* Nerešena mini-tabla posivi, a odigrana polja ostaju vidljiva */
+.mini-board-draw .cell {
+    background-color: var(--app-cell-draw);
+    color: #5C6470;
+}
+
+/* Veliki simbol pobednika preko cele mini-table; poluprovidan je da se polja ispod vide */
+.mini-board-winner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30cqw;
+    font-weight: 800;
+    line-height: 1;
+    opacity: 0.8;
+    pointer-events: none;
 }

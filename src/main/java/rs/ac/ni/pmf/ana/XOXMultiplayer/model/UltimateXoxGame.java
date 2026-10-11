@@ -33,6 +33,9 @@ public class UltimateXoxGame
 	private Symbol currentPlayer = Symbol.X;
 	// null znači slobodan potez, kao što je prvi potez igrača X
 	private Integer forcedBoard;
+	// Redni broj poslednjeg odigranog poteza. Ide uz svako stanje koje server pošalje,
+	// da klijent odbaci stanje starije od onog koje već prikazuje.
+	private int moveCount;
 	private boolean finished;
 	private GameOutcome outcome;
 
@@ -85,6 +88,7 @@ public class UltimateXoxGame
 		}
 
 		cells[boardIndex][cellIndex] = symbol;
+		moveCount++;
 		resolveMiniBoard(boardIndex, symbol);
 
 		if (hasBigBoardLine(symbol))
