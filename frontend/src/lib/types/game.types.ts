@@ -21,6 +21,8 @@ export interface GameStateDto {
     // null znači slobodan potez
     forcedBoard: number | null;
     moveNumber: number;
+    // Koliko je igraču na potezu ostalo do isteka vremena, null kad odbrojavanja nema
+    turnRemainingMillis: number | null;
 }
 
 // Namera igrača: polje u mini-tabli. Da li je potez ispravan odlučuje server.

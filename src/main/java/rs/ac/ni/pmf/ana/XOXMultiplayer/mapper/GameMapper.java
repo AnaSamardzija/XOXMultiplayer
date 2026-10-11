@@ -7,6 +7,8 @@ import rs.ac.ni.pmf.ana.XOXMultiplayer.model.UltimateXoxGame;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.GameStateDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.MatchFoundDto;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 
 @Component
@@ -29,6 +31,12 @@ public class GameMapper
 	public GameStateDto toGameStateDto(final GameSession session)
 	{
 		final UltimateXoxGame game = session.getGame();
+		final Instant turnDeadline = session.getTurnDeadline();
+
+		// Računa se u trenutku slanja, pa je tačno i za stanje koje se traži preko REST-a usred poteza
+		final Long turnRemainingMillis = turnDeadline == null
+				? null
+				: Math.max(0, Duration.between(Instant.now(), turnDeadline).toMillis());
 
 		return GameStateDto.builder()
 		                   .gameId(session.getId())
@@ -39,6 +47,7 @@ public class GameMapper
 		                   .currentPlayer(game.getCurrentPlayer())
 		                   .forcedBoard(game.getForcedBoard())
 		                   .moveNumber(game.getMoveCount())
+		                   .turnRemainingMillis(turnRemainingMillis)
 		                   .build();
 	}
 }
