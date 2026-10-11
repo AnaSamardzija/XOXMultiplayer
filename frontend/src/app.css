@@ -12,6 +12,7 @@
     --app-o: #E4572E;
     --app-playable: #FFB703;
     --app-cell: #fff;
+    --app-cell-hover: #FFE9A8;
     --app-cell-closed: #DCE5F5;
     --app-cell-draw: #B4BAC4;
     --app-grid-line: #8FA9EE;
@@ -192,6 +193,15 @@ body {
 
 .mini-board-playable .cell {
     background-color: var(--app-cell);
+}
+
+/* Polje u koje ovaj igrač sme da odigra; sva ostala su disabled */
+.cell:not(:disabled) {
+    cursor: pointer;
+}
+
+.cell:not(:disabled):hover {
+    background-color: var(--app-cell-hover);
 }
 
 /* Nerešena mini-tabla posivi, a odigrana polja ostaju vidljiva */

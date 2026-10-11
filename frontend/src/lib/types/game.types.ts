@@ -22,3 +22,9 @@ export interface GameStateDto {
     forcedBoard: number | null;
     moveNumber: number;
 }
+
+// Namera igrača: polje u mini-tabli. Da li je potez ispravan odlučuje server.
+export interface MoveRequestDto {
+    boardIndex: number;
+    cellIndex: number;
+}

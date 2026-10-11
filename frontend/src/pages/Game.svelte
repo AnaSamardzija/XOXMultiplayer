@@ -3,11 +3,11 @@
     import {push} from 'svelte-spa-router';
     import {authStore} from '../lib/auth/auth.store';
     import {connectionState} from '../lib/api/websocket.store';
-    import {subscribe} from '../lib/api/websocket.service';
+    import {send, subscribe} from '../lib/api/websocket.service';
     import {getActiveGame} from '../lib/api/game.api';
     import {applyGameState, gameStateStore, matchStore} from '../lib/stores/game.store';
     import Board from '../lib/components/Board.svelte';
-    import type {GameStateDto, PlayerSymbol} from '../lib/types/game.types';
+    import type {GameStateDto, MoveRequestDto, PlayerSymbol} from '../lib/types/game.types';
 
     let error = $state('');
 
@@ -57,6 +57,14 @@
             error = e instanceof Error ? e.message : 'Učitavanje partije nije uspelo';
         }
     }
+
+    // Šalje se samo namera. Tabla se ne menja na klik, nego tek kad novo stanje stigne sa teme partije.
+    function play(boardIndex: number, cellIndex: number) {
+        if (!game) return;
+
+        const move: MoveRequestDto = {boardIndex, cellIndex};
+        send(`/app/games/${game.gameId}/move`, move);
+    }
 </script>
 
 {#if error}
@@ -81,7 +89,8 @@
         {game.currentPlayer === mySymbol ? 'Vi ste na potezu' : 'Na potezu je protivnik'}
     </p>
 
-    <Board {game}/>
+    <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
+    <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'} onMove={play}/>
 {:else if !error}
     <div class="d-flex justify-content-center align-items-center gap-2">
         <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
