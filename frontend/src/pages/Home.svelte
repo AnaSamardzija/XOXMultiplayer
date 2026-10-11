@@ -1,4 +1,10 @@
-<div class="container mt-5">
-    <h1><i class="bi bi-grid-3x3"></i> XOX Multiplayer</h1>
-    <p class="text-secondary">Front radi.</p>
+<script lang="ts">
+    import {authStore} from '../lib/auth/auth.store';
+</script>
+
+<div class="card">
+    <div class="card-body p-4">
+        <h4 class="mb-1">Zdravo, {$authStore.user?.username}</h4>
+        <p class="text-muted mb-0">Prijavljeni ste.</p>
+    </div>
 </div>
