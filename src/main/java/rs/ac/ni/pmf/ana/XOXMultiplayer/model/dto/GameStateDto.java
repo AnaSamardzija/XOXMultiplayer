@@ -20,4 +20,7 @@ public class GameStateDto
 	// null znači slobodan potez
 	Integer forcedBoard;
 	int moveNumber;
+	// Koliko je igraču na potezu ostalo do isteka vremena, null kad odbrojavanja nema.
+	// Šalje se preostalo vreme, a ne trenutak isteka, da prikaz ne zavisi od sata na klijentu.
+	Long turnRemainingMillis;
 }

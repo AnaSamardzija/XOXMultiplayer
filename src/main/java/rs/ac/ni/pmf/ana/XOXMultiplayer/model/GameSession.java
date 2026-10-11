@@ -2,6 +2,10 @@ package rs.ac.ni.pmf.ana.XOXMultiplayer.model;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+
+import java.time.Instant;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * Partija u toku, onako kako je server drži u memoriji: ko igra koji simbol i stanje table.
@@ -17,6 +21,13 @@ public class GameSession
 	private final Long playerOId;
 	private final String playerOUsername;
 	private final UltimateXoxGame game = new UltimateXoxGame();
+
+	// Zakazan istek vremena za igrača na potezu, čuva se da bi mogao da se otkaže kad potez stigne
+	@Setter
+	private ScheduledFuture<?> turnTimeout;
+	// Trenutak u kome ističe vreme za potez, null kad odbrojavanja nema
+	@Setter
+	private Instant turnDeadline;
 
 	public boolean hasPlayer(final Long userId)
 	{

@@ -10,6 +10,7 @@
     import type {GameStateDto, MoveRequestDto, PlayerSymbol} from '../lib/types/game.types';
 
     let error = $state('');
+    let secondsLeft = $state<number | null>(null);
 
     // Privremeno: identifikator partije postoji samo u memoriji pregledača, pa posle osvežavanja strane
     // nema na koju temu da se pretplati. Povratak u partiju dolazi u kasnijem zadatku.
@@ -37,6 +38,28 @@
         loadGame();
 
         return unsubscribe;
+    });
+
+    // Odbrojavač služi samo za prikaz: o isteku vremena odlučuje server. Svako novo stanje nosi koliko je
+    // ostalo do isteka, pa se odatle računa lokalni rok i odbrojavanje se tako usklađuje sa serverom.
+    // Na nuli ostaje 0 dok ne stigne stanje sa potezom koji je server odigrao.
+    $effect(() => {
+        const remaining = game?.turnRemainingMillis;
+
+        if (remaining === null || remaining === undefined) {
+            secondsLeft = null;
+            return;
+        }
+
+        const deadline = Date.now() + remaining;
+        const tick = () => {
+            secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        };
+
+        tick();
+        const interval = setInterval(tick, 250);
+
+        return () => clearInterval(interval);
     });
 
     async function loadGame() {
@@ -87,6 +110,9 @@
 
     <p class="text-center fw-semibold mb-3">
         {game.currentPlayer === mySymbol ? 'Vi ste na potezu' : 'Na potezu je protivnik'}
+        {#if secondsLeft !== null}
+            · <span class:text-danger={secondsLeft <= 5}>{secondsLeft} s</span>
+        {/if}
     </p>
 
     <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
