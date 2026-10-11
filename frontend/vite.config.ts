@@ -15,6 +15,11 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false
+      },
+      // Bez ws: true proxy prosleđuje samo obične HTTP zahteve, a WebSocket vezu ne
+      '/ws': {
+        target: 'http://localhost:8080',
+        ws: true
       }
     }
   }
