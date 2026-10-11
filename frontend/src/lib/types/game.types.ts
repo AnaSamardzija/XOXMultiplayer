@@ -36,6 +36,19 @@ export interface GameStateDto {
     // null i kod nerešenog ishoda
     winnerUsername: string | null;
     endReason: GameEndReason | null;
+    // Dosadašnje poruke četa. Popunjeno je samo u odgovoru sa REST-a, a u stanju sa teme partije je null.
+    chatMessages: ChatMessageDto[] | null;
+}
+
+export interface ChatMessageDto {
+    // Redni broj poruke u partiji, počinje od 1
+    number: number;
+    senderUsername: string;
+    text: string;
+}
+
+export interface ChatMessageRequestDto {
+    text: string;
 }
 
 // Namera igrača: polje u mini-tabli. Da li je potez ispravan odlučuje server.

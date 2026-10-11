@@ -7,9 +7,11 @@ import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameOutcome;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.MiniBoardState;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.Symbol;
 
+import java.util.List;
+
 // Celo stanje partije. Isto je za oba igrača: svoj simbol front odredi po korisničkom imenu.
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class GameStateDto
 {
 	Long gameId;
@@ -34,4 +36,7 @@ public class GameStateDto
 	// Prazan i kod nerešenog ishoda
 	String winnerUsername;
 	GameEndReason endReason;
+	// Dosadašnje poruke četa. Popunjeno je samo u odgovoru sa REST-a, da igrač posle osvežavanja
+	// strane vidi ceo čet. U stanju koje ide na temu partije je null: nove poruke stižu na temu četa.
+	List<ChatMessageDto> chatMessages;
 }

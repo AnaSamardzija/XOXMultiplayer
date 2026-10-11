@@ -151,6 +151,48 @@ body {
     font-size: 0.75rem;
 }
 
+/* Čet. Ispod table je širok koliko i tabla, a pored nje zauzima celu kolonu */
+.chat-column {
+    max-width: 32rem;
+}
+
+/* Lista poruka ima stalnu visinu i svoj klizač, da čet ne gura stranu nadole */
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    height: 14rem;
+    overflow-y: auto;
+}
+
+@media (min-width: 992px) {
+    .chat-messages {
+        height: 24rem;
+    }
+}
+
+/* Tuđa poruka je levo, a moja desno i u plavoj */
+.chat-message {
+    align-self: flex-start;
+    max-width: 85%;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.75rem;
+    background-color: var(--app-bg);
+    overflow-wrap: anywhere;
+}
+
+.chat-message-mine {
+    align-self: flex-end;
+    background-color: var(--app-primary);
+    color: #fff;
+}
+
+.chat-message-sender {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--app-primary);
+}
+
 .symbol-x {
     color: var(--app-x);
 }

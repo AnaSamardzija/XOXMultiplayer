@@ -6,6 +6,7 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Controller;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.ChatMessageRequestDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.MoveRequestDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.service.GameService;
 
@@ -34,5 +35,16 @@ public class GameSocketController
 	public void surrender(@DestinationVariable final Long gameId, final Principal principal)
 	{
 		_gameService.surrender(gameId, principal.getName());
+	}
+
+	// Klijent šalje na /app/games/{gameId}/chat. Poruka stiže oboma na temu četa te partije.
+	// Prazna i predugačka poruka padaju na validaciji i, kao odbijen potez, samo se zapišu u log.
+	@MessageMapping("/games/{gameId}/chat")
+	public void chat(
+			@DestinationVariable final Long gameId,
+			@Valid @Payload final ChatMessageRequestDto request,
+			final Principal principal)
+	{
+		_gameService.sendChatMessage(gameId, principal.getName(), request.getText());
 	}
 }

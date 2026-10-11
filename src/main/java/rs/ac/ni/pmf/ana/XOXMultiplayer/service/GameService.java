@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.InvalidOperationException;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.ResourceNotFoundException;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.mapper.GameMapper;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.ChatMessage;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameEndReason;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameOutcome;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameSession;
@@ -34,6 +35,8 @@ public class GameService
 {
 	// Tema partije: klijenti se pretplaćuju na /topic/games/{id}
 	private static final String GAME_TOPIC = "/topic/games/";
+	// Tema četa je odvojena od teme partije: /topic/games/{id}/chat
+	private static final String CHAT_TOPIC_SUFFIX = "/chat";
 
 	private static final Duration TURN_DURATION = Duration.ofSeconds(20);
 	private static final Duration RECONNECT_DURATION = Duration.ofSeconds(40);
@@ -92,7 +95,7 @@ public class GameService
 			             // da se tabla ne pročita usred poteza.
 			             synchronized (session)
 			             {
-				             return _gameMapper.toGameStateDto(session);
+				             return _gameMapper.toActiveGameStateDto(session);
 			             }
 		             });
 	}
@@ -125,6 +128,30 @@ public class GameService
 			// Igra je završena, pa ovo samo otkazuje tajmer
 			scheduleTurnTimeout(session);
 			finishGame(session, GameEndReason.SURRENDER);
+		}
+	}
+
+	// Poruka se čuva uz partiju i objavljuje na temu četa. Prolazi kroz isto zaključavanje kao potez:
+	// redni broj se dodeljuje i poruka objavljuje unutar njega, da na temu izlaze redom kojim su numerisane.
+	public void sendChatMessage(final Long gameId, final String username, final String text)
+	{
+		final GameSession session = findSession(gameId);
+		// Šalje samo igrač te partije
+		symbolOf(session, username);
+
+		synchronized (session)
+		{
+			// Partija je mogla da se završi dok se čekalo na zaključavanje
+			if (session.getGame().isFinished())
+			{
+				throw new InvalidOperationException("Partija je završena");
+			}
+
+			final ChatMessage chatMessage = new ChatMessage(session.getChatMessages().size() + 1, username, text.strip());
+
+			session.getChatMessages().add(chatMessage);
+			_messagingTemplate.convertAndSend(
+					GAME_TOPIC + session.getId() + CHAT_TOPIC_SUFFIX, _gameMapper.toChatMessageDto(chatMessage));
 		}
 	}
 

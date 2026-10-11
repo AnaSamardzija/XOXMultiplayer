@@ -1,10 +1,12 @@
 package rs.ac.ni.pmf.ana.XOXMultiplayer.mapper;
 
 import org.springframework.stereotype.Component;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.ChatMessage;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameOutcome;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameSession;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.Symbol;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.UltimateXoxGame;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.ChatMessageDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.GameStateDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.MatchFoundDto;
 
@@ -56,6 +58,23 @@ public class GameMapper
 		                   .winnerUsername(winnerUsername(session))
 		                   .endReason(session.getEndReason())
 		                   .build();
+	}
+
+	// Stanje za odgovor sa REST-a: isto kao ono za temu partije, uz dosadašnje poruke četa
+	public GameStateDto toActiveGameStateDto(final GameSession session)
+	{
+		return toGameStateDto(session).toBuilder()
+		                              .chatMessages(session.getChatMessages().stream().map(this::toChatMessageDto).toList())
+		                              .build();
+	}
+
+	public ChatMessageDto toChatMessageDto(final ChatMessage chatMessage)
+	{
+		return ChatMessageDto.builder()
+		                     .number(chatMessage.number())
+		                     .senderUsername(chatMessage.senderUsername())
+		                     .text(chatMessage.text())
+		                     .build();
 	}
 
 	private String winnerUsername(final GameSession session)

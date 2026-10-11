@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
@@ -37,6 +39,9 @@ public class GameSession
 	// Zakazani rokovi za povratak igrača koji su trenutno bez veze. Igrač je odsutan dok za
 	// njega ovde postoji rok.
 	private final Map<Symbol, ScheduledFuture<?>> reconnectTimeouts = new EnumMap<>(Symbol.class);
+	// Čet partije. Živi samo ovde, pa nestaje zajedno sa partijom kad se ona ukloni iz memorije.
+	// Čita se i menja samo unutar zaključavanja partije.
+	private final List<ChatMessage> chatMessages = new ArrayList<>();
 
 	public boolean hasPlayer(final Long userId)
 	{

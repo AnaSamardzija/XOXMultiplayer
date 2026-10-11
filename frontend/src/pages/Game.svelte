@@ -5,10 +5,24 @@
     import {connectionState} from '../lib/api/websocket.store';
     import {send, subscribe} from '../lib/api/websocket.service';
     import {getActiveGame} from '../lib/api/game.api';
-    import {activeGameIdStore, applyGameState, gameStateStore} from '../lib/stores/game.store';
+    import {
+        activeGameIdStore,
+        applyChatMessages,
+        applyGameState,
+        chatStore,
+        gameStateStore
+    } from '../lib/stores/game.store';
     import Board from '../lib/components/Board.svelte';
+    import Chat from '../lib/components/Chat.svelte';
     import ConfirmModal from '../lib/components/ConfirmModal.svelte';
-    import type {GameEndReason, GameStateDto, MoveRequestDto, PlayerSymbol} from '../lib/types/game.types';
+    import type {
+        ChatMessageDto,
+        ChatMessageRequestDto,
+        GameEndReason,
+        GameStateDto,
+        MoveRequestDto,
+        PlayerSymbol
+    } from '../lib/types/game.types';
 
     const END_REASON_TEXT: Record<GameEndReason, string> = {
         THREE_IN_ROW: 'Tri mini-table u nizu',
@@ -36,6 +50,9 @@
 
     const opponentAway = $derived(game ? (mySymbol === 'X' ? game.playerOAway : game.playerXAway) : false);
 
+    // U store-u mogu da ostanu poruke prethodne partije
+    const chatMessages = $derived(game && $chatStore.gameId === game.gameId ? $chatStore.messages : []);
+
     const resultTitle = $derived.by(() => {
         if (!game?.finished) return '';
         if (game.outcome === 'DRAW') return 'Nerešeno';
@@ -48,10 +65,17 @@
     $effect(() => {
         if ($connectionState !== 'connected' || $activeGameIdStore === null) return;
 
-        const unsubscribe = subscribe<GameStateDto>(`/topic/games/${$activeGameIdStore}`, applyGameState);
+        const gameId = $activeGameIdStore;
+        const unsubscribe = subscribe<GameStateDto>(`/topic/games/${gameId}`, applyGameState);
+        // Čet ima svoju temu: na nju stiže jedna nova poruka, a dosadašnje su u odgovoru sa REST-a
+        const unsubscribeChat = subscribe<ChatMessageDto>(
+            `/topic/games/${gameId}/chat`, (message) => applyChatMessages(gameId, [message]));
         loadGame();
 
-        return unsubscribe;
+        return () => {
+            unsubscribe();
+            unsubscribeChat();
+        };
     });
 
     // Odbrojavač služi samo za prikaz: o isteku vremena odlučuje server. Svako novo stanje nosi koliko je
@@ -112,6 +136,13 @@
         if (!game) return;
 
         send(`/app/games/${game.gameId}/surrender`);
+    }
+
+    function sendChatMessage(text: string) {
+        if (!game) return;
+
+        const request: ChatMessageRequestDto = {text};
+        send(`/app/games/${game.gameId}/chat`, request);
     }
 
     // Nova partija se traži sa početne strane, jer je tamo pretplata na poruku o uparivanju
@@ -175,14 +206,25 @@
             <p class="text-center text-muted small mb-3">Protivnik je odsutan, čeka se da se vrati.</p>
         {/if}
 
-        <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
-        <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'} onMove={play}/>
+        <!-- Na širokom ekranu čet je pored table, a na telefonu ispod nje -->
+        <div class="row g-3 justify-content-center">
+            <div class="col-lg-8">
+                <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
+                <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'}
+                       onMove={play}/>
 
-        <div class="text-center mt-3">
-            <button class="btn btn-outline-danger btn-sm" onclick={() => showSurrenderModal = true}
-                    disabled={$connectionState !== 'connected'}>
-                Predaj partiju
-            </button>
+                <div class="text-center mt-3">
+                    <button class="btn btn-outline-danger btn-sm" onclick={() => showSurrenderModal = true}
+                            disabled={$connectionState !== 'connected'}>
+                        Predaj partiju
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-4 chat-column">
+                <Chat messages={chatMessages} myUsername={$authStore.user?.username ?? ''}
+                      disabled={$connectionState !== 'connected'} onSend={sendChatMessage}/>
+            </div>
         </div>
     {/if}
 {:else if !error}
