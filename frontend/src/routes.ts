@@ -3,6 +3,7 @@ import {wrap} from 'svelte-spa-router/wrap';
 import Login from './pages/Login.svelte';
 import Register from './pages/Register.svelte';
 import Home from './pages/Home.svelte';
+import Game from './pages/Game.svelte';
 import NotFound from './pages/NotFound.svelte';
 import {requireAuth, requireGuest} from './lib/auth/auth.guard';
 
@@ -13,6 +14,7 @@ export const routes = {
     '/login': guestOnly(Login),
     '/register': guestOnly(Register),
     '/': guarded(Home),
+    '/game': guarded(Game),
 
     // Mora biti poslednja: sve ostale putanje
     '*': guarded(NotFound),
