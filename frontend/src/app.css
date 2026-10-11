@@ -196,24 +196,50 @@ body {
     font-size: 0.75rem;
 }
 
-/* Čet. Ispod table je širok koliko i tabla, a pored nje zauzima celu kolonu */
-.chat-column {
-    max-width: 32rem;
+/* Čet. Kružić u donjem desnom uglu ekrana, isti na telefonu i na računaru */
+.chat-toggle {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1030;
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(11, 31, 58, 0.3);
 }
 
-/* Lista poruka ima stalnu visinu i svoj klizač, da čet ne gura stranu nadole */
+/* Panel sa četom izlazi sa desne strane. Zatvoren je i dalje u strani, samo izvan ekrana;
+   visibility ga sklanja i od tastature. dvh: visina prati tastaturu na telefonu. */
+.chat-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 22rem);
+    height: 100dvh;
+    background-color: #fff;
+    box-shadow: -0.25rem 0 1rem rgba(11, 31, 58, 0.2);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.25s ease, visibility 0.25s;
+}
+
+.chat-panel-open {
+    transform: none;
+    visibility: visible;
+}
+
+/* Lista poruka zauzima sav prostor između zaglavlja i polja za unos i ima svoj klizač */
 .chat-messages {
     display: flex;
     flex-direction: column;
+    flex: 1;
     gap: 0.4rem;
-    height: 14rem;
     overflow-y: auto;
-}
-
-@media (min-width: 992px) {
-    .chat-messages {
-        height: 24rem;
-    }
 }
 
 /* Tuđa poruka je levo, a moja desno i u plavoj */
