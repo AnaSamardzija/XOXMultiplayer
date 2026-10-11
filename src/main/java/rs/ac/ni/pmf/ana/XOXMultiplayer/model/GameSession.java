@@ -22,4 +22,21 @@ public class GameSession
 	{
 		return playerXId.equals(userId) || playerOId.equals(userId);
 	}
+
+	// Po korisničkom imenu, jer je to ono što WebSocket poruka nosi kao Principal.
+	// Vraća null kad korisnik nije igrač ove partije.
+	public Symbol symbolOf(final String username)
+	{
+		if (playerXUsername.equals(username))
+		{
+			return Symbol.X;
+		}
+
+		if (playerOUsername.equals(username))
+		{
+			return Symbol.O;
+		}
+
+		return null;
+	}
 }

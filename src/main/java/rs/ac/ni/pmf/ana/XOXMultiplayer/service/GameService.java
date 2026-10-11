@@ -1,11 +1,15 @@
 package rs.ac.ni.pmf.ana.XOXMultiplayer.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.InvalidOperationException;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.ResourceNotFoundException;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.mapper.GameMapper;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameSession;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameStatus;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.Symbol;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.GameStateDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.entity.GameEntity;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.entity.UserEntity;
@@ -19,8 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class GameService
 {
+	// Tema partije: klijenti se pretplaćuju na /topic/games/{id}
+	private static final String GAME_TOPIC = "/topic/games/";
+
 	private final GameRepository _gameRepository;
 	private final GameMapper _gameMapper;
+	private final SimpMessagingTemplate _messagingTemplate;
 
 	// Partije u toku žive samo u memoriji, po identifikatoru partije. ConcurrentHashMap zato što
 	// poruke sa WebSocket-a obrađuje više niti.
@@ -68,5 +76,31 @@ public class GameService
 				             return _gameMapper.toGameStateDto(session);
 			             }
 		             });
+	}
+
+	public void makeMove(final Long gameId, final String username, final int boardIndex, final int cellIndex)
+	{
+		final GameSession session = _games.get(gameId);
+
+		if (session == null)
+		{
+			throw new ResourceNotFoundException("Partija nije pronađena");
+		}
+
+		final Symbol symbol = session.symbolOf(username);
+
+		if (symbol == null)
+		{
+			throw new InvalidOperationException("Niste igrač u ovoj partiji");
+		}
+
+		// Zaključavanje po partiji: dve poruke za istu partiju mogu da se obrađuju paralelno.
+		// Da li je igrač na potezu, da li je mini-tabla dozvoljena i da li je polje prazno proverava
+		// applyMove. Stanje se objavljuje unutar zaključavanja, da na temu izlazi redom kojim su potezi primenjeni.
+		synchronized (session)
+		{
+			session.getGame().applyMove(symbol, boardIndex, cellIndex);
+			_messagingTemplate.convertAndSend(GAME_TOPIC + gameId, _gameMapper.toGameStateDto(session));
+		}
 	}
 }

@@ -1,7 +1,12 @@
 <script lang="ts">
     import type {GameStateDto, MiniBoardState, PlayerSymbol} from '../types/game.types';
 
-    let {game}: {game: GameStateDto} = $props();
+    // canPlay kaže da li je ovaj igrač na potezu; bez toga su sva polja onemogućena
+    let {game, canPlay, onMove}: {
+        game: GameStateDto;
+        canPlay: boolean;
+        onMove: (boardIndex: number, cellIndex: number) => void;
+    } = $props();
 
     // Front ne zna pravila: koje mini-table se ističu čita se iz onoga što je server poslao.
     // Obavezna mini-tabla je jedna, a kod slobodnog poteza server je ne šalje, pa se ističu sve otvorene.
@@ -26,8 +31,10 @@
             <div class="mini-board"
                  class:mini-board-playable={isPlayable(boardIndex)}
                  class:mini-board-draw={game.boardStates[boardIndex] === 'DRAW'}>
-                {#each cells as cell}
-                    <button type="button" class="cell" class:symbol-x={cell === 'X'} class:symbol-o={cell === 'O'} disabled>
+                {#each cells as cell, cellIndex}
+                    <button type="button" class="cell" class:symbol-x={cell === 'X'} class:symbol-o={cell === 'O'}
+                            disabled={!canPlay || !isPlayable(boardIndex) || cell !== null}
+                            onclick={() => onMove(boardIndex, cellIndex)}>
                         {cell ?? ''}
                     </button>
                 {/each}
