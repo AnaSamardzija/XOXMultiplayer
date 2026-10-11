@@ -4,7 +4,7 @@
     import {authStore} from '../lib/auth/auth.store';
     import {connectionState} from '../lib/api/websocket.store';
     import {send, subscribe} from '../lib/api/websocket.service';
-    import {matchStore} from '../lib/stores/game.store';
+    import {activeGameIdStore} from '../lib/stores/game.store';
     import type {MatchFoundDto} from '../lib/types/game.types';
 
     let waiting = $state(false);
@@ -17,7 +17,7 @@
 
         const unsubscribe = subscribe<MatchFoundDto>('/user/queue/match', (match) => {
             waiting = false;
-            matchStore.set(match);
+            activeGameIdStore.set(match.gameId);
             push('/game');
         });
 

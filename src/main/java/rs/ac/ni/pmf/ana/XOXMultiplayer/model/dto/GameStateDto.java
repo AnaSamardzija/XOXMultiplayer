@@ -15,6 +15,9 @@ public class GameStateDto
 	Long gameId;
 	String playerXUsername;
 	String playerOUsername;
+	// Igrač trenutno nema nijednu živu vezu i teče mu rok za povratak
+	boolean playerXAway;
+	boolean playerOAway;
 	// cells[mini-tabla][polje], null je prazno polje
 	Symbol[][] cells;
 	MiniBoardState[] boardStates;

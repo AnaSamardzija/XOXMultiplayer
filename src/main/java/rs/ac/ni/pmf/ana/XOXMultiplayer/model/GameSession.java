@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -32,10 +34,18 @@ public class GameSession
 	// predaja i prekinuta veza nisu pravila igre.
 	@Setter
 	private GameEndReason endReason;
+	// Zakazani rokovi za povratak igrača koji su trenutno bez veze. Igrač je odsutan dok za
+	// njega ovde postoji rok.
+	private final Map<Symbol, ScheduledFuture<?>> reconnectTimeouts = new EnumMap<>(Symbol.class);
 
 	public boolean hasPlayer(final Long userId)
 	{
 		return playerXId.equals(userId) || playerOId.equals(userId);
+	}
+
+	public boolean isAway(final Symbol symbol)
+	{
+		return reconnectTimeouts.containsKey(symbol);
 	}
 
 	// Po korisničkom imenu, jer je to ono što WebSocket poruka nosi kao Principal.

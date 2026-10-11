@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -15,6 +16,7 @@ import rs.ac.ni.pmf.ana.XOXMultiplayer.security.StompAuthChannelInterceptor;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer
 {
 	private final StompAuthChannelInterceptor _stompAuthChannelInterceptor;
+	private final TaskScheduler _taskScheduler;
 
 	@Override
 	public void registerStompEndpoints(final StompEndpointRegistry registry)
@@ -30,7 +32,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer
 	public void configureMessageBroker(final MessageBrokerRegistry registry)
 	{
 		// /topic i /queue deli broker pretplaćenima, a poruke na /app idu u @MessageMapping metode
-		registry.enableSimpleBroker("/topic", "/queue");
+		// Heartbeat: server i klijent na svakih deset sekundi šalju praznu poruku. Kad klijentova
+		// izostane, Spring zatvori sesiju i objavi SessionDisconnectEvent. Bez toga server ne bi
+		// primetio da je igraču nestao internet, jer se takva veza ne zatvori uredno, pa mu ni rok
+		// za povratak ne bi krenuo. Broker poruke šalje preko zakazivača, zato mu se on prosleđuje.
+		registry.enableSimpleBroker("/topic", "/queue")
+				.setHeartbeatValue(new long[]{10000, 10000})
+				.setTaskScheduler(_taskScheduler);
 		registry.setApplicationDestinationPrefixes("/app");
 	}
 

@@ -18,6 +18,9 @@ export interface GameStateDto {
     gameId: number;
     playerXUsername: string;
     playerOUsername: string;
+    // Igrač trenutno nema vezu sa serverom i teče mu rok za povratak
+    playerXAway: boolean;
+    playerOAway: boolean;
     // cells[mini-tabla][polje], null je prazno polje
     cells: (PlayerSymbol | null)[][];
     boardStates: MiniBoardState[];

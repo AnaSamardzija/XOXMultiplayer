@@ -5,7 +5,7 @@
     import {connectionState} from '../lib/api/websocket.store';
     import {send, subscribe} from '../lib/api/websocket.service';
     import {getActiveGame} from '../lib/api/game.api';
-    import {applyGameState, gameStateStore, matchStore} from '../lib/stores/game.store';
+    import {activeGameIdStore, applyGameState, gameStateStore} from '../lib/stores/game.store';
     import Board from '../lib/components/Board.svelte';
     import ConfirmModal from '../lib/components/ConfirmModal.svelte';
     import type {GameEndReason, GameStateDto, MoveRequestDto, PlayerSymbol} from '../lib/types/game.types';
@@ -21,21 +21,20 @@
     let secondsLeft = $state<number | null>(null);
     let showSurrenderModal = $state(false);
 
-    // Privremeno: identifikator partije postoji samo u memoriji pregledača, pa posle osvežavanja strane
-    // nema na koju temu da se pretplati. Povratak u partiju dolazi u kasnijem zadatku.
-    if (!get(matchStore)) {
-        push('/');
-    }
-
-    // U store-u može da ostane stanje prethodne partije dok ne stigne stanje ove
-    const game = $derived($gameStateStore?.gameId === $matchStore?.gameId ? $gameStateStore : null);
+    // Posle osvežavanja strane identifikator partije još nije poznat: upisuje ga App.svelte kad od
+    // servera sazna da partija postoji. Dotle se ovde vidi „Učitavanje partije…“.
+    // U store-u može da ostane stanje prethodne partije dok ne stigne stanje ove.
+    const game = $derived(
+        $gameStateStore && $gameStateStore.gameId === $activeGameIdStore ? $gameStateStore : null);
 
     const mySymbol = $derived<PlayerSymbol>(game?.playerXUsername === $authStore.user?.username ? 'X' : 'O');
 
-    const players = $derived<{symbol: PlayerSymbol; username: string}[]>(game ? [
-        {symbol: 'X', username: game.playerXUsername},
-        {symbol: 'O', username: game.playerOUsername}
+    const players = $derived<{symbol: PlayerSymbol; username: string; away: boolean}[]>(game ? [
+        {symbol: 'X', username: game.playerXUsername, away: game.playerXAway},
+        {symbol: 'O', username: game.playerOUsername, away: game.playerOAway}
     ] : []);
+
+    const opponentAway = $derived(game ? (mySymbol === 'X' ? game.playerOAway : game.playerXAway) : false);
 
     const resultTitle = $derived.by(() => {
         if (!game?.finished) return '';
@@ -47,9 +46,9 @@
     // uparivanju ne nosi tablu, a stanje koje bi server objavio na temu pre pretplate bi se izgubilo.
     // Posle ponovnog povezivanja efekat se izvrši opet, pa se obnove i pretplata i stanje.
     $effect(() => {
-        if ($connectionState !== 'connected' || !$matchStore) return;
+        if ($connectionState !== 'connected' || $activeGameIdStore === null) return;
 
-        const unsubscribe = subscribe<GameStateDto>(`/topic/games/${$matchStore.gameId}`, applyGameState);
+        const unsubscribe = subscribe<GameStateDto>(`/topic/games/${$activeGameIdStore}`, applyGameState);
         loadGame();
 
         return unsubscribe;
@@ -88,9 +87,9 @@
                 // Završena je dok je ovaj ekran otvoren: završni ekran se crta iz poslednjeg primljenog
                 // stanja, pa se ostaje na njemu
                 const last = get(gameStateStore);
-                if (last?.finished && last.gameId === get(matchStore)?.gameId) return;
+                if (last?.finished && last.gameId === get(activeGameIdStore)) return;
 
-                matchStore.set(null);
+                activeGameIdStore.set(null);
                 push('/');
                 return;
             }
@@ -117,7 +116,7 @@
 
     // Nova partija se traži sa početne strane, jer je tamo pretplata na poruku o uparivanju
     function newGame() {
-        matchStore.set(null);
+        activeGameIdStore.set(null);
         push('/');
     }
 </script>
@@ -140,6 +139,9 @@
                 <span class="text-truncate">
                     {player.username}{#if player.symbol === mySymbol}&nbsp;(vi){/if}
                 </span>
+                {#if player.away}
+                    <span class="player-away">odsutan</span>
+                {/if}
             </div>
         {/each}
     </div>
@@ -161,12 +163,17 @@
             <button class="btn btn-primary btn-lg" onclick={newGame}>Nova partija</button>
         </div>
     {:else}
-        <p class="text-center fw-semibold mb-3">
+        <p class="text-center fw-semibold" class:mb-3={!opponentAway} class:mb-1={opponentAway}>
             {game.currentPlayer === mySymbol ? 'Vi ste na potezu' : 'Na potezu je protivnik'}
             {#if secondsLeft !== null}
                 · <span class:text-danger={secondsLeft <= 5}>{secondsLeft} s</span>
             {/if}
         </p>
+
+        <!-- Tajmer poteza i dalje teče: dok je protivnik odsutan, server igra umesto njega -->
+        {#if opponentAway}
+            <p class="text-center text-muted small mb-3">Protivnik je odsutan, čeka se da se vrati.</p>
+        {/if}
 
         <!-- Bez veze poruka ne može da se pošalje, pa su polja onemogućena dok se veza ne vrati -->
         <Board {game} canPlay={game.currentPlayer === mySymbol && $connectionState === 'connected'} onMove={play}/>

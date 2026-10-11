@@ -43,6 +43,8 @@ public class GameMapper
 		                   .gameId(session.getId())
 		                   .playerXUsername(session.getPlayerXUsername())
 		                   .playerOUsername(session.getPlayerOUsername())
+		                   .playerXAway(session.isAway(Symbol.X))
+		                   .playerOAway(session.isAway(Symbol.O))
 		                   .cells(Arrays.stream(game.getCells()).map(Symbol[]::clone).toArray(Symbol[][]::new))
 		                   .boardStates(game.getBoardStates().clone())
 		                   .currentPlayer(game.getCurrentPlayer())
