@@ -55,6 +55,7 @@ export function subscribe<T>(destination: string, callback: (body: T) => void): 
     };
 }
 
-export function send(destination: string, body: unknown) {
-    client.publish({destination, body: JSON.stringify(body)});
+// Poruke bez sadržaja, kao ulazak u red čekanja, šalju se bez tela
+export function send(destination: string, body?: unknown) {
+    client.publish({destination, body: body === undefined ? undefined : JSON.stringify(body)});
 }
