@@ -63,11 +63,13 @@
                                 <input id="username"
                                        class="form-control"
                                        autocomplete="username"
-                                       maxlength="100"
+                                       minlength="3"
+                                       maxlength="20"
                                        bind:value={username}
                                        bind:this={usernameInput}
                                        required/>
                             </div>
+                            <div class="form-text">Od 3 do 20 znakova: slova engleske abecede, cifre i znakovi . - _ ! *</div>
                         </div>
 
                         <div class="mb-3">

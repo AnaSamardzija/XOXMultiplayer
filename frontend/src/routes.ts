@@ -8,15 +8,18 @@ import Leaderboard from './pages/Leaderboard.svelte';
 import Profile from './pages/Profile.svelte';
 import NotFound from './pages/NotFound.svelte';
 import {requireAuth, requireGuest} from './lib/auth/auth.guard';
+import {requireNoGameInProgress} from './lib/stores/game.guard';
 
-const guarded = (component: Component) => wrap({component, conditions: [requireAuth]});
+// Redosled uslova je bitan: ruter staje na prvom koji ne prođe, pa neprijavljen korisnik ide na prijavu
+const guarded = (component: Component) => wrap({component, conditions: [requireAuth, requireNoGameInProgress]});
 const guestOnly = (component: Component) => wrap({component, conditions: [requireGuest]});
 
 export const routes = {
     '/login': guestOnly(Login),
     '/register': guestOnly(Register),
     '/': guarded(Home),
-    '/game': guarded(Game),
+    // Jedina ruta dostupna dok partija traje
+    '/game': wrap({component: Game, conditions: [requireAuth]}),
     '/leaderboard': guarded(Leaderboard),
     '/profile': guarded(Profile),
 
