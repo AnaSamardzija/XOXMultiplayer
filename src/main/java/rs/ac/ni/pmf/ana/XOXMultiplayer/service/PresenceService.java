@@ -51,4 +51,10 @@ public class PresenceService
 			_gameService.playerLeft(username);
 		}
 	}
+
+	// Broje se igrači, a ne sesije: igrač sa dve otvorene kartice je jedan igrač na mreži
+	public synchronized int onlineCount()
+	{
+		return _sessions.size();
+	}
 }

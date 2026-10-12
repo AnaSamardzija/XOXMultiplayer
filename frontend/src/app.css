@@ -97,7 +97,7 @@ body {
     font-weight: 600;
 }
 
-/* Kartice statistike na profilu */
+/* Brojevi statistike na profilu i na početnoj strani */
 .stat-label {
     color: var(--bs-secondary-color);
     font-size: 0.875rem;

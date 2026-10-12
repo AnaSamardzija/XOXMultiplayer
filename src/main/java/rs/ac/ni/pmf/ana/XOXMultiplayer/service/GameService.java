@@ -84,6 +84,11 @@ public class GameService
 		return _games.values().stream().anyMatch(session -> session.hasPlayer(userId));
 	}
 
+	public int activeGameCount()
+	{
+		return _games.size();
+	}
+
 	public Optional<GameStateDto> findActiveGame(final Long userId)
 	{
 		return _games.values().stream()
