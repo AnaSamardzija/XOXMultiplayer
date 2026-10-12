@@ -1,6 +1,7 @@
 package rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,7 +16,9 @@ import lombok.Value;
 public class RegisterRequest
 {
 	@NotBlank(message = "Korisničko ime je obavezno")
-	@Size(max = 100, message = "Korisničko ime može imati najviše 100 znakova")
+	@Size(min = 3, max = 20, message = "Korisničko ime mora imati između 3 i 20 znakova")
+	@Pattern(regexp = "[A-Za-z0-9._!*-]*",
+			message = "Korisničko ime sme da sadrži samo slova engleske abecede, cifre i znakove . - _ ! *")
 	String username;
 
 	@NotBlank(message = "Lozinka je obavezna")

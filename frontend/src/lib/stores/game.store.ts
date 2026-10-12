@@ -1,4 +1,4 @@
-import {get, writable} from 'svelte/store';
+import {derived, get, writable} from 'svelte/store';
 import type {ChatMessageDto, GameStateDto} from '../types/game.types';
 
 // Identifikator partije na kojoj je korisnik. Upisuje se iz poruke o uparivanju na početnoj strani,
@@ -7,6 +7,12 @@ export const activeGameIdStore = writable<number | null>(null);
 
 // Stanje partije koje se trenutno prikazuje. Upisuje se samo kroz applyGameState.
 export const gameStateStore = writable<GameStateDto | null>(null);
+
+// Partija je u toku kad identifikator postoji, a za tu partiju nije stiglo završno stanje.
+// Važi i dok prvo stanje još nije stiglo, da ne ostane rupa između uparivanja i prve table.
+// Dok je partija u toku, sa ekrana partije se ne izlazi.
+export const gameInProgressStore = derived([activeGameIdStore, gameStateStore],
+    ([$gameId, $state]) => $gameId !== null && !($state?.gameId === $gameId && $state.finished));
 
 // Poruke četa, uz identifikator partije kojoj pripadaju. Upisuje se samo kroz applyChatMessages
 // i applyGameState.
