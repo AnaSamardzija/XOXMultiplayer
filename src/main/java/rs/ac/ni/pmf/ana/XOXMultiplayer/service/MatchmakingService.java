@@ -7,6 +7,7 @@ import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.InvalidOperationException;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.exception.ResourceNotFoundException;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.mapper.GameMapper;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameSession;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.LobbyWaitingDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.entity.UserEntity;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.repository.UserRepository;
 
@@ -20,6 +21,9 @@ public class MatchmakingService
 {
 	// Lični kanal igrača: klijent se pretplaćuje na /user/queue/match
 	private static final String MATCH_DESTINATION = "/queue/match";
+
+	// Tema za sve prijavljene igrače: ko trenutno čeka protivnika
+	private static final String LOBBY_TOPIC = "/topic/lobby";
 
 	private static final Random RANDOM = new Random();
 
@@ -44,6 +48,7 @@ public class MatchmakingService
 		if (_waitingPlayer == null)
 		{
 			_waitingPlayer = new WaitingPlayer(user, sessionId);
+			publishWaiting(user.getUsername());
 			return;
 		}
 
@@ -55,6 +60,7 @@ public class MatchmakingService
 
 		final UserEntity opponent = _waitingPlayer.user();
 		_waitingPlayer = null;
+		publishWaiting(null);
 
 		final boolean userIsX = RANDOM.nextBoolean();
 		final GameSession session = userIsX
@@ -73,6 +79,7 @@ public class MatchmakingService
 		if (_waitingPlayer != null && _waitingPlayer.user().getUsername().equals(username))
 		{
 			_waitingPlayer = null;
+			publishWaiting(null);
 		}
 	}
 
@@ -83,7 +90,21 @@ public class MatchmakingService
 		if (_waitingPlayer != null && _waitingPlayer.sessionId().equals(sessionId))
 		{
 			_waitingPlayer = null;
+			publishWaiting(null);
 		}
+	}
+
+	// Za GET /api/v1/lobby: igrač koji se poveže kasnije nije dobio poruku sa teme
+	public synchronized String waitingUsername()
+	{
+		return _waitingPlayer == null ? null : _waitingPlayer.user().getUsername();
+	}
+
+	// Poziva se samo iz synchronized metoda, pa poruke stižu istim redom kojim se red menjao.
+	// username je null kad više niko ne čeka.
+	private void publishWaiting(final String username)
+	{
+		_messagingTemplate.convertAndSend(LOBBY_TOPIC, LobbyWaitingDto.builder().waitingUsername(username).build());
 	}
 
 	private record WaitingPlayer(UserEntity user, String sessionId)
