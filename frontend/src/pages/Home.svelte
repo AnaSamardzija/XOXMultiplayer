@@ -6,6 +6,7 @@
     import {connectionState} from '../lib/api/websocket.store';
     import {send, subscribe} from '../lib/api/websocket.service';
     import {activeGameIdStore} from '../lib/stores/game.store';
+    import {pendingJoinStore, waitingUsernameStore} from '../lib/stores/lobby.store';
     import {getLobby} from '../lib/api/lobby.api';
     import {getLeaderboard, getMyStats} from '../lib/api/stats.api';
     import HowToPlay from '../lib/components/HowToPlay.svelte';
@@ -30,11 +31,18 @@
 
     const myUsername = $derived($authStore.user?.username);
 
+    // Igrač koji čeka protivnika, osim kad je to prijavljeni igrač iz druge kartice
+    const waitingOpponent = $derived($waitingUsernameStore !== myUsername ? $waitingUsernameStore : null);
+
     // Statistika i rang-lista se učitavaju nezavisno: ako jedna padne, greška se vidi samo u njenoj
     // celini, a ostatak strane i dugme „Igraj“ rade
     onMount(() => {
         loadStats();
         loadTopPlayers();
+
+        // Odlazak sa strane pre nego što se veza otvori: namera iz obaveštenja ne sme da ostane
+        // za sledeći dolazak na početnu
+        return () => pendingJoinStore.set(false);
     });
 
     async function loadStats() {
@@ -64,6 +72,12 @@
             activeGameIdStore.set(match.gameId);
             push('/game');
         });
+
+        // Igrač je došao klikom na „Igraj“ u obaveštenju: u red ulazi tek ovde, pošto pretplata postoji
+        if (get(pendingJoinStore)) {
+            pendingJoinStore.set(false);
+            joinQueue();
+        }
 
         // Broj igrača na mreži se učitava tek kad je veza otvorena, a ne čim se strana otvori:
         // inače bi odgovor mogao da stigne pre nego što server upiše vezu ovog igrača.
@@ -156,7 +170,11 @@
                 <div class="alert alert-warning">{queueMessage}</div>
             {/if}
 
-            <p class="text-muted mb-3">Uđite u red čekanja i server će vam naći protivnika.</p>
+            {#if waitingOpponent}
+                <p class="mb-3 text-break"><span class="fw-semibold">{waitingOpponent}</span> čeka protivnika</p>
+            {:else}
+                <p class="text-muted mb-3">Uđite u red čekanja i server će vam naći protivnika.</p>
+            {/if}
 
             <button class="btn btn-primary btn-lg" onclick={joinQueue} disabled={$connectionState !== 'connected'}>
                 Igraj

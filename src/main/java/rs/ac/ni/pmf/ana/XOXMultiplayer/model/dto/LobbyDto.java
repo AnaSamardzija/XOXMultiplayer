@@ -9,4 +9,6 @@ public class LobbyDto
 {
 	int onlinePlayers;
 	int activeGames;
+	// null kad niko ne čeka
+	String waitingUsername;
 }
