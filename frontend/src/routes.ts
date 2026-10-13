@@ -5,7 +5,8 @@ import Register from './pages/Register.svelte';
 import Home from './pages/Home.svelte';
 import Game from './pages/Game.svelte';
 import Leaderboard from './pages/Leaderboard.svelte';
-import Profile from './pages/Profile.svelte';
+import MyGames from './pages/MyGames.svelte';
+import Settings from './pages/Settings.svelte';
 import NotFound from './pages/NotFound.svelte';
 import {requireAuth, requireGuest} from './lib/auth/auth.guard';
 import {requireNoGameInProgress} from './lib/stores/game.guard';
@@ -21,7 +22,8 @@ export const routes = {
     // Jedina ruta dostupna dok partija traje
     '/game': wrap({component: Game, conditions: [requireAuth]}),
     '/leaderboard': guarded(Leaderboard),
-    '/profile': guarded(Profile),
+    '/my-games': guarded(MyGames),
+    '/settings': guarded(Settings),
 
     // Mora biti poslednja: sve ostale putanje
     '*': guarded(NotFound),

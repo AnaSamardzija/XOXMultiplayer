@@ -182,7 +182,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-bar-chart me-2 text-primary"></i>Vaše partije</span>
-                <a class="small fw-normal" href="#/profile">Profil</a>
+                <a class="small fw-normal" href="#/my-games">Moje partije</a>
             </div>
             <!-- Kartica je visoka koliko i susedna, pa su brojevi na sredini po visini -->
             <div class="card-body d-flex flex-column justify-content-center">

@@ -4,11 +4,14 @@ import org.springframework.stereotype.Component;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.ChatMessage;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameOutcome;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameSession;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.PlayerResult;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.Symbol;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.UltimateXoxGame;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.ChatMessageDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.GameStateDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.MatchFoundDto;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.PlayedGameDto;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.entity.GameEntity;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -75,6 +78,35 @@ public class GameMapper
 		                     .senderUsername(chatMessage.senderUsername())
 		                     .text(chatMessage.text())
 		                     .build();
+	}
+
+	// Završena partija iz baze, iz ugla igrača koji je traži. Ishod se računa iz ishoda table i simbola
+	// igrača, pa se pobednik, koji je lenja veza, ne čita.
+	public PlayedGameDto toPlayedGameDto(final GameEntity gameEntity, final Long userId)
+	{
+		final boolean isPlayerX = gameEntity.getPlayerX().getId().equals(userId);
+
+		return PlayedGameDto.builder()
+		                    .id(gameEntity.getId())
+		                    .opponentUsername(isPlayerX
+				                    ? gameEntity.getPlayerO().getUsername()
+				                    : gameEntity.getPlayerX().getUsername())
+		                    .symbol(isPlayerX ? Symbol.X : Symbol.O)
+		                    .result(playerResult(gameEntity.getOutcome(), isPlayerX))
+		                    .endReason(gameEntity.getEndReason())
+		                    .startedAt(gameEntity.getStartedAt())
+		                    .endedAt(gameEntity.getEndedAt())
+		                    .build();
+	}
+
+	private PlayerResult playerResult(final GameOutcome outcome, final boolean isPlayerX)
+	{
+		if (outcome == GameOutcome.DRAW)
+		{
+			return PlayerResult.DRAW;
+		}
+
+		return (outcome == GameOutcome.X_WON) == isPlayerX ? PlayerResult.WIN : PlayerResult.LOSS;
 	}
 
 	private String winnerUsername(final GameSession session)

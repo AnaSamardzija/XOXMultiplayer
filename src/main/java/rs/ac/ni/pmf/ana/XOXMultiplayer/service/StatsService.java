@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.mapper.GameMapper;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.mapper.StatsMapper;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.GameStatus;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.PlayerWins;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.LeaderboardEntryDto;
+import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.PlayedGameDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.model.dto.UserStatsDto;
 import rs.ac.ni.pmf.ana.XOXMultiplayer.repository.GameRepository;
 
@@ -22,6 +24,7 @@ public class StatsService
 
 	private final GameRepository _gameRepository;
 	private final StatsMapper _statsMapper;
+	private final GameMapper _gameMapper;
 
 	// Računaju se samo završene partije. Izjednačeni igrači dele mesto, a sledeće se preskače: 1, 2, 2, 4.
 	@Transactional(readOnly = true)
@@ -52,5 +55,14 @@ public class StatsService
 	public UserStatsDto userStats(final Long userId)
 	{
 		return _statsMapper.toUserStatsDto(_gameRepository.findStats(userId, GameStatus.FINISHED));
+	}
+
+	// Partije u toku se ne vraćaju
+	@Transactional(readOnly = true)
+	public List<PlayedGameDto> userGames(final Long userId)
+	{
+		return _gameRepository.findFinishedByPlayer(userId, GameStatus.FINISHED).stream()
+		                      .map(gameEntity -> _gameMapper.toPlayedGameDto(gameEntity, userId))
+		                      .toList();
 	}
 }
