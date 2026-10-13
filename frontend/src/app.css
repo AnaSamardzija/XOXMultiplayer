@@ -86,6 +86,25 @@ body {
     color: rgba(255, 255, 255, 0.85);
 }
 
+/* min-width: 0 dozvoljava da se dugo korisničko ime skrati. Ne koristi se overflow: hidden,
+   jer bi odsekao padajući meni. */
+.navbar-actions,
+.navbar-user-menu {
+    min-width: 0;
+}
+
+.navbar-user-menu {
+    position: relative;
+}
+
+/* Meni se otvara ispod korisničkog imena, poravnat uz desnu ivicu */
+.navbar-user-menu .dropdown-menu {
+    top: 100%;
+    right: 0;
+    left: auto;
+    margin-top: 0.5rem;
+}
+
 /* Kartice: bez ivice, sa blagom senkom */
 .card {
     --bs-card-border-width: 0;
@@ -97,7 +116,7 @@ body {
     font-weight: 600;
 }
 
-/* Brojevi statistike na profilu i na početnoj strani */
+/* Brojevi statistike na strani „Moje partije“ i na početnoj strani */
 .stat-label {
     color: var(--bs-secondary-color);
     font-size: 0.875rem;
@@ -108,6 +127,26 @@ body {
     font-weight: 700;
     line-height: 1.2;
     color: var(--app-dark);
+}
+
+/* Pločica statistike iznad liste partija je link koji bira filter: bez podvlačenja, sa jačom senkom
+   pod mišem, a pločica izabranog filtera ima okvir */
+.stat-card {
+    text-decoration: none;
+    border: 2px solid transparent;
+}
+
+.stat-card:hover {
+    box-shadow: 0 0.25rem 0.75rem rgba(11, 31, 58, 0.18);
+}
+
+.stat-card-active {
+    border-color: var(--app-primary);
+}
+
+/* Oznaka ishoda u listi partija: ista širina u svakom redu, da tekst desno od nje bude poravnat */
+.result-badge {
+    width: 5.25rem;
 }
 
 /* Rang-lista: mesto u krugu, prva tri mesta zlatno, srebrno i bronzano */

@@ -18,6 +18,13 @@ export const gameInProgressStore = derived([activeGameIdStore, gameStateStore],
 // i applyGameState.
 export const chatStore = writable<{gameId: number | null; messages: ChatMessageDto[]}>({gameId: null, messages: []});
 
+// Poziva se pri svakoj odjavi, da sledeći korisnik u istom pregledaču ne vidi završni ekran prethodnog
+export function clearGame() {
+    activeGameIdStore.set(null);
+    gameStateStore.set(null);
+    chatStore.set({gameId: null, messages: []});
+}
+
 // Kroz ovo prolaze i istorija iz odgovora sa REST-a i pojedinačne poruke sa teme četa, pa nije bitno
 // šta stigne prvo. Ista poruka može da stigne na oba načina: po rednom broju se izbacuje duplikat,
 // a poruke se slažu po redu. Poruke druge partije se ne mešaju sa ovima, nego se kreće od praznog četa.

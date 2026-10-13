@@ -36,4 +36,16 @@ public interface GameRepository extends JpaRepository<GameEntity, Long>
 			WHERE g.status = :status AND (g.playerX.id = :userId OR g.playerO.id = :userId)
 			""")
 	PlayerStats findStats(@Param("userId") Long userId, @Param("status") GameStatus status);
+
+	// JOIN FETCH učitava oba igrača istim upitom, inače bi za ime protivnika išao poseban upit po partiji.
+	// Najnovije su prve; id razrešava partije završene u istoj sekundi.
+	@Query("""
+			SELECT g
+			FROM GameEntity g
+			JOIN FETCH g.playerX
+			JOIN FETCH g.playerO
+			WHERE g.status = :status AND (g.playerX.id = :userId OR g.playerO.id = :userId)
+			ORDER BY g.endedAt DESC, g.id DESC
+			""")
+	List<GameEntity> findFinishedByPlayer(@Param("userId") Long userId, @Param("status") GameStatus status);
 }
